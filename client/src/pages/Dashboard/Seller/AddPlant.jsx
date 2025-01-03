@@ -44,7 +44,7 @@ const AddPlant = () => {
 
     try{
       await axiosSecure.post('/plants', plantData);
-      toast.success('Data Added Successfully');
+      toast.success('Plant Added Successfully');
     } catch(error){
       console.log(error);
     }finally{
