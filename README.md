@@ -1,3 +1,8 @@
+# Project Name
+
+<h4>Plant Net Platform</h4>
+<hr>
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

@@ -50,6 +50,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const plantCollection = client.db("plantsDB").collection("plants");
+    const orderCollection = client.db("plantsDB").collection("orderItems");
 
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -80,23 +81,84 @@ async function run() {
       }
     })
 
-    app.post("/plants", async(req, res) => {
+    app.post("/plants", async (req, res) => {
       const plantData = req.body;
       const result = await plantCollection.insertOne(plantData);
       res.send(result);
     });
 
-    app.get("/plants", async(req, res) => {
+    app.patch("/quantity:id", verifyToken, async (req, res) => {
+      const { quantityToUpdate, status } = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+
+      let updateQuantity = {
+        $inc: { quantity: -quantityToUpdate }
+      }
+
+      if (status === 'Increase') {
+        updateQuantity = {
+          $inc: { quantity: quantityToUpdate }
+        }
+      }
+
+      const updateResult = await plantCollection.updateOne(filter, updateQuantity);
+      res.send(updateResult);
+    });
+
+    app.get("/plants", async (req, res) => {
       const result = await plantCollection.find().toArray();
       res.send(result);
     });
 
-    app.get("/plant/:id", async(req, res) => {
+    app.get("/plant/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
 
       const findResult = await plantCollection.findOne(query);
       res.send(findResult);
+    });
+
+    // Order Collection
+    app.post("/order-items", verifyToken, async (req, res) => {
+      const orderItem = req.body;
+      const insertResult = await orderCollection.insertOne(orderItem);
+      res.send(insertResult);
+    });
+
+    app.get("/order-items/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const result = await orderCollection.aggregate([
+        {
+          $match: { 'customer.email': email }
+        },
+        {
+          $addFields: {
+            plantId: { $toObjectId: '$plantId' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'plants',
+            localField: 'plantId',
+            foreignField: '_id',
+            as: 'plants'
+          }
+        },
+        { $unwind: '$plants' },
+        {
+          $addFields: {
+            name: '$plants.name',
+            image: '$plants.image',
+            category: '$plants.category'
+          }
+        },
+        {
+          $project: { plants: 0 }
+        }
+      ]).toArray();
+
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection

@@ -52,6 +52,22 @@ const PurchaseModal = ({ closeModal, isOpen, refetch, plant }) => {
 
   const handlePurchase = async () => {
     console.table(purchase);
+
+    try {
+      await axiosSecure.post("/order-items", purchase);
+      await axiosSecure.patch(`/quantity${_id}`, {
+        quantityToUpdate: totalQuantity,
+        status: "Decrease",
+      });
+
+      toast.success("Successfully ordered");
+      refetch();
+      navigate("/dashboard/my-orders");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      closeModal();
+    }
   };
 
   return (
@@ -144,9 +160,12 @@ const PurchaseModal = ({ closeModal, isOpen, refetch, plant }) => {
                     />
                   </div>
                 </div>
-                  <div className="mt-5">
-                    <button onClick={handlePurchase} className="w-full btn bg-green-500 border-none text-lg px-6 py-1 text-white font-bold rounded-full">{`Pay ${totalPrice}$`}</button>
-                  </div>
+                <div className="mt-5">
+                  <button
+                    onClick={handlePurchase}
+                    className="w-full btn bg-green-500 border-none text-lg px-6 py-1 text-white font-bold rounded-full"
+                  >{`Pay ${totalPrice}$`}</button>
+                </div>
               </DialogPanel>
             </TransitionChild>
           </div>
