@@ -87,13 +87,16 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/quantity:id", verifyToken, async (req, res) => {
-      const { quantityToUpdate, status } = req.body;
+    app.patch("/quantity/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
+      const { quantityToUpdate, status } = req.body;
 
-      let updateQuantity = {
-        $inc: { quantity: -quantityToUpdate }
+      let updateQuantity = {};
+      if (status === 'Decrease') {
+        updateQuantity = {
+          $inc: { quantity: -quantityToUpdate }
+        }
       }
 
       if (status === 'Increase') {
@@ -124,6 +127,25 @@ async function run() {
       const orderItem = req.body;
       const insertResult = await orderCollection.insertOne(orderItem);
       res.send(insertResult);
+    });
+
+    app.delete("/order-item/:id", verifyToken, async (req, res) => {
+      const { status } = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const findOrder = await orderCollection.findOne(query);
+      const updateStatus = {
+        $set: {status: "Canceled"}
+      }
+
+      await orderCollection.updateOne(query, updateStatus);
+
+      if (findOrder.status === "Delivered") {
+        return res.status(409).send({ message: "Cannot cancel once the product is delivered" })
+      }
+
+      const deleteResult = await orderCollection.deleteOne(query);
+      res.send(deleteResult);
     });
 
     app.get("/order-items/:email", verifyToken, async (req, res) => {

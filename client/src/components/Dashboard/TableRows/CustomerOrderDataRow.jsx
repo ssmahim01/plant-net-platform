@@ -1,11 +1,32 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import DeleteModal from "../../Modal/DeleteModal";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import toast from "react-hot-toast";
 const CustomerOrderDataRow = ({ orders, refetch }) => {
-  const {name, image, category, price, quantity, status} = orders[0] || {};
+  const { _id, plantId, name, image, category, price, quantity, status } =
+    orders[0] || {};
   let [isOpen, setIsOpen] = useState(false);
   const closeModal = () => setIsOpen(false);
+  const axiosSecure = useAxiosSecure();
   // console.log(orders[0]);
+
+  const handleDelete = async () => {
+    try {
+      await axiosSecure.delete(`/order-item/${_id}`);
+      await axiosSecure.patch(`/quantity/${plantId}`, {
+        quantityToUpdate: quantity,
+        status: "Increase",
+      });
+
+      refetch();
+      toast.success("Order Cancelled");
+    } catch (error) {
+      toast.error(error.response.data);
+    } finally {
+      closeModal();
+    }
+  };
 
   return (
     <tr>
@@ -36,19 +57,32 @@ const CustomerOrderDataRow = ({ orders, refetch }) => {
         <p className="text-gray-900 whitespace-no-wrap">{quantity}</p>
       </td>
       <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-        <p className="text-gray-900 whitespace-no-wrap">{status}</p>
+        <p
+          className={`text-gray-900 whitespace-no-wrap ${
+            status === "Pending"
+              ? "text-white font-bold badge badge-warning"
+              : "badge badge-error text-white font-bold"
+          }`}
+        >
+          {status ? "Pending" : "Canceled"}
+        </p>
       </td>
 
       <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
         <button
           onClick={() => setIsOpen(true)}
-          className="relative disabled:cursor-not-allowed cursor-pointer inline-block px-3 py-1 font-semibold text-lime-900 leading-tight"
+          disabled={!status}
+          className="relative cursor-pointer disabled:cursor-not-allowed inline-block px-3 py-1 font-semibold text-lime-900 leading-tight"
         >
-          <span className="absolute cursor-pointer inset-0 bg-red-200 opacity-50 rounded-full"></span>
-          <span className="relative cursor-pointer">Cancel</span>
+          <span className="absolute inset-0 bg-red-200 opacity-50 rounded-full"></span>
+          <span className="relative">Cancel</span>
         </button>
 
-        <DeleteModal isOpen={isOpen} closeModal={closeModal} />
+        <DeleteModal
+          handleDelete={handleDelete}
+          isOpen={isOpen}
+          closeModal={closeModal}
+        />
       </td>
     </tr>
   );

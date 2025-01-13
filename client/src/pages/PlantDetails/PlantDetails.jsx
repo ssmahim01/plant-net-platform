@@ -4,12 +4,14 @@ import Heading from "../../components/Shared/Heading";
 import Button from "../../components/Shared/Button/Button";
 import PurchaseModal from "../../components/Modal/PurchaseModal";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
+import useAuth from "../../hooks/useAuth";
 
 const PlantDetails = () => {
+  const { user } = useAuth();
   const { id } = useParams();
   // console.log(id);
 
@@ -109,17 +111,30 @@ const PlantDetails = () => {
               Price: {plant?.price}$
             </p>
             <div>
-              <Button
-                onClick={() => {
-                  setIsOpen(true);
-                }}
-                label={`${plant?.quantity > 0 ? "Purchase" : "Out of Stock"}`}
-              />
+              {user ? (
+                <Button
+                  onClick={() => {
+                    setIsOpen(true);
+                  }}
+                  label={`${plant?.quantity > 0 ? "Purchase" : "Out of Stock"}`}
+                />
+              ) : (
+                <Link to="/login">
+                  <p className="text-xl text-warning font-bold">
+                    Login to continue
+                  </p>
+                </Link>
+              )}
             </div>
           </div>
           <hr className="my-6" />
 
-          <PurchaseModal plant={plant} refetch={refetch} closeModal={closeModal} isOpen={isOpen} />
+          <PurchaseModal
+            plant={plant}
+            refetch={refetch}
+            closeModal={closeModal}
+            isOpen={isOpen}
+          />
 
           <div className="md:col-span-3 order-first md:order-last mb-10">
             {/* RoomReservation */}

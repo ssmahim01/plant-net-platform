@@ -55,7 +55,7 @@ const PurchaseModal = ({ closeModal, isOpen, refetch, plant }) => {
 
     try {
       await axiosSecure.post("/order-items", purchase);
-      await axiosSecure.patch(`/quantity${_id}`, {
+      await axiosSecure.patch(`/quantity/${_id}`, {
         quantityToUpdate: totalQuantity,
         status: "Decrease",
       });
